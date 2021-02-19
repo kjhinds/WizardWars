@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <title>Wizard Wars</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div id='header'>
+            <h1>Wizard Wars!</h1>
+            <p>A wizard approaches! Counter his spells!</p>
+        </div>
+        <div id='enemy'>
+            <div><img id='enemyImage' src='wizard.png'></div>
+            <div id='enemySpell'></div>
+        </div>
+        <div id='player'>
+            <div id='counter'>
+                <p>Counter</p>
+                <div id='counterButtons'></div>
+                <div id='counterSelection'></div>
+            </div>
+            <div id='cast'>
+                <p>Attack</p>
+                <div id='castButtons'></div>
+                <div id='castSelection'></div>
+            </div>
+            <div id='spell'>
+                <p>Your Spell:</p>
+                <div id='playerSpell'></div>
+            </div>
+            <div id='castManaButton'>
+                <button type="button" onclick="playerCastsSpell()">Cast!</button>
+            </div>
+        </div>
+        <div id='footer'>
+
+        </div>
+        <script src="script.js" async defer></script>
+    </body>
+</html>
