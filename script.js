@@ -47,12 +47,18 @@ const castButtons = document.getElementById('castButtons');
 const counterSelection = document.getElementById('counterSelection');
 const castSelection = document.getElementById('castSelection');
 
+const playerHP = document.getElementById('hp');
+const playerEffects = document.getElementById('effects');
+
 const manaNames = Object.keys(MANA);
 
 let countersPicked = 0;
 let totalPicked = 0;
-let playerMana = [];
-let playerCounter = [];
+
+let player = {counter: [], attack: [], hp: 1000,};
+let enemy = {counter: [], attack: [], hp: 1000,};
+
+playerHP.innerHTML = `${player.hp}`;
 
 manaNames.forEach(mana => {
     const button = document.createElement("BUTTON");
@@ -78,15 +84,13 @@ function whoIsFirst(){
 
 function startGame() {
     if (whoIsFirst() == 'enemy') {
-        let enemyAction = pickEnemyAction();
-        let spell = resolveSpell(enemyAction.attack);
-        displaySpellEffect('enemy',spell)
+        pickEnemyAction();
     }
 }
 
 function counterManaPicked() {
     counterSelection.innerHTML += `${this.innerHTML}<br>`
-    playerCounter.push(this.innerHTML);
+    player.counter.push(this.innerHTML);
     countersPicked++;
     totalPicked++;
     if (totalPicked >= 6) {
@@ -100,7 +104,7 @@ function counterManaPicked() {
 
 function spellManaPicked() {
     castSelection.innerHTML += `${this.innerHTML}<br>`
-    playerMana.push(this.innerHTML);
+    player.attack.push(this.innerHTML);
     totalPicked++;
     if (totalPicked >= 6) {
         setCounterButtons('disable');
@@ -125,16 +129,22 @@ function setCastButtons(status) {
 }
 
 function newRound() {
-    countersPicked = 0;
-    totalPicked = 0;
-    setCounterButtons('enable');
-    setCastButtons('enable');
-    castSelection.innerHTML = '';
-    counterSelection.innerHTML = '';
-    playerMana = [];
-    playerCounter = [];
-    enemyMana = [];
-    enemyCounter = [];
+    if (player.hp <= 0) {
+        console.log('you lose!');
+    } else if (enemy.hp <= 0) {
+        console.log('you win!');
+    } else {
+        countersPicked = 0;
+        totalPicked = 0;
+        setCounterButtons('enable');
+        setCastButtons('enable');
+        castSelection.innerHTML = '';
+        counterSelection.innerHTML = '';
+        playerHP.innerHTML = `${player.hp}`;
+
+        player.counter = [];
+        player.attack = [];
+    }
 }
 
 function resolveSpell(mana) {
@@ -149,43 +159,59 @@ function resolveSpell(mana) {
     return spell;
 }
 
-function counterMana(counter, mana){
+function counterEnemyMana(){
+    player.counter.forEach(element => {
+        let index = enemy.attack.indexOf(element);
+        if (index != -1) {
+            enemy.attack.splice(index,1);
+        }
+    });
+}
 
+function counterPlayerMana(){
+    enemy.counter.forEach(element => {
+        let index = player.attack.indexOf(element);
+        if (index != -1) {
+            player.attack.splice(index,1);
+        }
+    });
 }
 
 function displaySpellEffect(who, spell) {
     spell.polar = cartesian2Polar(spell.x, spell.y);
     const spellDisplay = document.getElementById(`${who}Spell`);
     spellDisplay.style.backgroundColor = 
-                `hsl(${spell.polar.angle},${spell.polar.magnitude*25}%,50%)`;
-    console.table(spell);
+                `hsl(${spell.polar.angle},${spell.polar.magnitude}%,50%)`;
 }
 
 function pickEnemyAction() {
-    let counters = 0;
-    let enemyAction = {
-        counter: [],
-        attack: [],
-    }
+    enemy.counter = [];
+    enemy.attack = [];
     for (let i = 0; i < 6; i++) {
-        if (counters < 2) {
-            if (Math.random < 0.5){
-                enemyAction.counter.push(
+        if (enemy.counter.length < 2) {
+            if (Math.random() < 0.5){
+                enemy.counter.push(
                         manaNames[Math.floor(Math.random() * manaNames.length)]);
             } else {
-                enemyAction.attack.push(
+                enemy.attack.push(
                         manaNames[Math.floor(Math.random() * manaNames.length)]);
             }
         } else {
-            enemyAction.attack.push(
+            enemy.attack.push(
                     manaNames[Math.floor(Math.random() * manaNames.length)]);
         }
     }
-    return enemyAction;
+
+    let spell = resolveSpell(enemy.attack);
+    displaySpellEffect('enemy',spell)
+    console.table(player.attack);
+    counterPlayerMana();
+    console.table(player.attack);
+    applyPlayerSpell();
 }
 
 function cartesian2Polar(x,y){
-    const magnitude = Math.sqrt(x*x + y*y);
+    const magnitude = Math.sqrt(x*x + y*y)*25;
     const angle = Math.atan2(y, x) * (180/Math.PI);
     const polarCoord = {
         magnitude: magnitude,
@@ -194,10 +220,24 @@ function cartesian2Polar(x,y){
     return polarCoord;
 }
 
+function applyEnemySpell() {
+    let spell = resolveSpell(enemy.attack);
+    spell.polar = cartesian2Polar(spell.x, spell.y);
+    player.hp -= Math.floor(spell.polar.magnitude);
+}
+
+function applyPlayerSpell() {
+    let spell = resolveSpell(player.attack);
+    spell.polar = cartesian2Polar(spell.x, spell.y);
+    enemy.hp -= Math.floor(spell.polar.magnitude);
+}
+
 function playerCastsSpell() {
-    console.log(playerMana);
-    let spell = resolveSpell(playerMana);
+    let spell = resolveSpell(player.attack);
     displaySpellEffect('player', spell);
+    counterEnemyMana();
+    applyEnemySpell();
+    pickEnemyAction();
     newRound();
 }
 

@@ -22,9 +22,9 @@ body {
 
 #player {
     display: grid;
-    grid-template-columns: 100px 100px 100px;
+    grid-template-columns: 100px 100px 100px 100px;
     margin: auto;
-    width: 200px;
+    width: 500px;
 }
 
 #playerSpell {
@@ -36,6 +36,6 @@ body {
 
 #castManaButton {
     margin: 15px;
-    grid-column-start: 1;
-    grid-column-end: 3;
+    grid-column-start: 2;
+    grid-column-end: 4;
 }
