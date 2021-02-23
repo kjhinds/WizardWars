@@ -4,7 +4,7 @@ const MANA = {
         y: 0,
         hue: 0,
         damage: 0,
-        effect: {critical: .15},
+        effect: {critical: .1},
     },
     'FIRE': {
         x: Math.SQRT2,
@@ -18,7 +18,7 @@ const MANA = {
         y: 2,
         hue: 90,
         damage: 0,
-        effect: {petrified: .1},
+        effect: {petrified: .08},
     },
     'EARTH': {
         x: -Math.SQRT2,
@@ -32,7 +32,7 @@ const MANA = {
         y: 0,
         hue: 180,
         damage: 0,
-        effect: {stable: .3},
+        effect: {stable: .2},
     },
     'WATER': {
         x: -Math.SQRT2,
@@ -46,7 +46,7 @@ const MANA = {
         y: -2,
         hue: -90,
         damage: 0,
-        effect: {confused: .15},
+        effect: {confused: .10},
     },
     'AIR': {
         x: Math.SQRT2,
@@ -202,18 +202,20 @@ function displaySpellEffect(who, spell) {
 function pickEnemyAction() {
     enemy.counter = [];
     enemy.attack = [];
-    for (let i = 0; i < enemy.actions; i++) {
-        if (enemy.counter.length < 2) {
-            if (Math.random() < 0.5){
-                enemy.counter.push(
-                        manaNames[Math.floor(Math.random() * manaNames.length)]);
+    if (enemy.petrified != true) {
+        for (let i = 0; i < enemy.actions; i++) {
+            if (enemy.counter.length < 2) {
+                if (Math.random() < 0.5){
+                    enemy.counter.push(
+                            manaNames[Math.floor(Math.random() * manaNames.length)]);
+                } else {
+                    enemy.attack.push(
+                            manaNames[Math.floor(Math.random() * manaNames.length)]);
+                }
             } else {
                 enemy.attack.push(
                         manaNames[Math.floor(Math.random() * manaNames.length)]);
             }
-        } else {
-            enemy.attack.push(
-                    manaNames[Math.floor(Math.random() * manaNames.length)]);
         }
     }
     restoreStatus(enemy);
@@ -221,7 +223,6 @@ function pickEnemyAction() {
     displaySpellEffect('enemy',spell)
     counterMana(enemy,player);
     applySpell(player, enemy);
-    displayStatus(player);
 }
 
 function cartesian2Polar(x,y){
@@ -261,16 +262,18 @@ function applySpell(caster, target) {
         if (element[0] == 'burning') {
             target.burning = Math.floor(element[1]);
             target.hp -= target.burning;
+            console.log('burned');
         } else if (element[0] == 'critical') {
             target.hp -= (Math.random() <= element[1]) ? Math.floor(spellDamage) : 0;
         } else if (element[0] == 'slow' && Math.random() <= element[1]) {
             target.actions = 5;
-        } else if (element[0] == 'stable') {
+        } else if (element[0] == 'stable' && Math.random() <= element[1]) {
             caster.stable = true;
         } else if (Math.random() <= element[1]) {
             target[element[0]] = true;
         }
     });
+    displayStatus(target);
 }
 
 function restoreStatus(target) {
@@ -294,9 +297,6 @@ function displayStatus(target) {
     if (target.petrified) {
         target.effectDisplay.innerHTML += `Petrified<br>`;
     }
-    if (target.stable) {
-        target.effectDisplay.innerHTML += `Stable<br>`;
-    }
     if (target.slow) {
         target.effectDisplay.innerHTML += `Slowed<br>`;
     }
@@ -314,7 +314,6 @@ function playerCastsSpell() {
     displaySpellEffect('player', spell);
     counterMana(player,enemy);
     applySpell(enemy, player);
-    displayStatus(enemy);
     playerHP.innerHTML = `${player.hp}`;
     pickEnemyAction();
     newRound();
