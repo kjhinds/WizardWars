@@ -3,35 +3,35 @@ const MANA = {
         x: 2,
         y: 0,
         hue: 0,
-        damage: 0,
+        damage: 5,
         effect: {critical: .1},
     },
     'FIRE': {
         x: Math.SQRT2,
         y: Math.SQRT2,
         hue: 45,
-        damage: 25,
-        effect: {burning: 2},
+        damage: 20,
+        effect: {burning: 4},
     },
     'PHYSICAL': {
         x: 0,
         y: 2,
         hue: 90,
-        damage: 0,
+        damage: 5,
         effect: {petrified: .08},
     },
     'EARTH': {
         x: -Math.SQRT2,
         y: Math.SQRT2,
         hue: 135,
-        damage: 35,
+        damage: 30,
         effect: {none: 0},
     },
     'STABILITY': {
         x: -2,
         y: 0,
         hue: 180,
-        damage: 0,
+        damage: 5,
         effect: {stable: .2},
     },
     'WATER': {
@@ -45,16 +45,27 @@ const MANA = {
         x: 0,
         y: -2,
         hue: -90,
-        damage: 0,
+        damage: 5,
         effect: {confused: .10},
     },
     'AIR': {
         x: Math.SQRT2,
         y: -Math.SQRT2,
         hue: -45,
-        damage: 25,
+        damage: 20,
         effect: {dazed: 1},
     },
+}
+
+const OPPOSITES = {
+    'VOLATILITY': 'STABILITY',
+    'STABILITY': 'VOLATILITY',
+    'MENTAL': 'PHYSICAL',
+    'PHYSICAL': 'MENTAL',
+    'FIRE': 'WATER',
+    'WATER': 'FIRE',
+    'AIR': 'EARTH',
+    'EARTH': 'AIR',
 }
 
 const counterButtons = document.getElementById('counterButtons');
@@ -62,9 +73,6 @@ const castButtons = document.getElementById('castButtons');
 
 const counterSelection = document.getElementById('counterSelection');
 const castSelection = document.getElementById('castSelection');
-
-const playerHP = document.getElementById('hp');
-
 
 const log = document.getElementById('log');
 
@@ -74,17 +82,34 @@ let countersPicked = 0;
 let totalPicked = 0;
 
 let player = {counter: [], attack: [], hp: 1000, effects: [],
-            actions: 6, stable: false, petrified: false,
+            actions: 6, stable: false, petrified: false, slow: false,
             dazed: false, burning: false, confused: false};
 let enemy = {counter: [], attack: [], hp: 1000, effects: [],
-            actions: 6, stable: false, petrified: false,
+            actions: 6, stable: false, petrified: false, slow: false,
             dazed: false, burning: false, confused: false};
 
+player.HPdisplay = document.getElementById('hp');          
 player.effectDisplay = document.getElementById('effects');
 
+enemy.HPdisplay = document.getElementById('enemyhp');          
 enemy.effectDisplay = document.getElementById('enemyEffects');
 
-playerHP.innerHTML = `${player.hp}`;
+player.HPdisplay.innerHTML = `${player.hp}`;
+enemy.HPdisplay.innerHTML = `${enemy.hp}`;
+
+function reduceHP(target, change) {
+    target.hp -= Math.floor(change);
+    if (target.hp < 0) target.hp = 0;
+    target.HPdisplay.innerHTML = `${target.hp}`;
+}
+
+function combatLog(message, clear=false) {
+    if (clear) {
+        log.innerHTML = `${message}`;
+    } else {
+        log.innerHTML += `<br>${message}`;
+    }
+}
 
 function createButtons(type) {
     manaNames.forEach(mana => {
@@ -106,7 +131,10 @@ function startGame() {
     createButtons(counterButtons);
     createButtons(castButtons);
     if (whoIsFirst() == 'enemy') {
+        combatLog("An enemy wizard is casting a spell! Counter it and cast your own!", true);
         pickEnemyAction();
+    } else {
+        combatLog("You catch an enemy wizard off guard! Cast a spell to attack!", true);
     }
 }
 
@@ -138,25 +166,25 @@ function setButtonsDisabled(type,status) {
             const button = document.getElementById(`${type}${mana}`);
             button.disabled = true;
         });
+        const castButton = document.getElementById('castButton');
+        castButton.innerText = "Petrified!";
     } else {
         manaNames.forEach(mana => {
             const button = document.getElementById(`${type}${mana}`);
             button.disabled = status;
         });
         if (player.dazed) {
-            const blocked = manaNames[Math.floor(Math.random() * manaNames.length)];
-            const button = document.getElementById(`${type}${blocked}`);
+            const button = document.getElementById(`${type}${player.dazed}`);
             button.disabled = true;
         }
     }
 }
 
 function newRound() {
-    console.log('round');
     if (player.hp <= 0) {
-        console.log('you lose!');
+        combatLog("You were defeated by the enemy wizard...", true);
     } else if (enemy.hp <= 0) {
-        console.log('you win!');
+        combatLog("You have triumphed over the enemy wizard!", true);
     } else {
         countersPicked = 0;
         totalPicked = 0;
@@ -184,10 +212,7 @@ function resolveSpell(mana) {
 function counterMana(caster, target){
     if (target.stable != true) {
         caster.counter.forEach(element => {
-            let index = target.attack.indexOf(element);
-            if (index != -1) {
-                target.attack.splice(index,1);
-            }
+            target.attack.push(element);
         });
     }
 }
@@ -202,19 +227,30 @@ function displaySpellEffect(who, spell) {
 function pickEnemyAction() {
     enemy.counter = [];
     enemy.attack = [];
+    var castableMana = manaNames;
     if (enemy.petrified != true) {
+        if (enemy.dazed) {
+            castableMana.splice(Math.floor(Math.random()*castableMana.length),1);
+        }
         for (let i = 0; i < enemy.actions; i++) {
-            if (enemy.counter.length < 2) {
-                if (Math.random() < 0.5){
-                    enemy.counter.push(
-                            manaNames[Math.floor(Math.random() * manaNames.length)]);
-                } else {
-                    enemy.attack.push(
-                            manaNames[Math.floor(Math.random() * manaNames.length)]);
+            if (enemy.confused == true) {
+                enemy.attack.push(
+                        castableMana[Math.floor(Math.random() * castableMana.length)]);
+            } else if (enemy.counter.length < 2 &&
+                            player.attack.length > 0 &&
+                            Math.random() < 0.5) {
+                var mana = player.attack[Math.floor(Math.random() * player.attack.length)];
+                mana = OPPOSITES[mana];
+                if (!castableMana.includes(mana)) {
+                    mana = castableMana[Math.floor(Math.random() * castableMana.length)];
                 }
+                enemy.counter.push(mana);
+            } else if (enemy.attack.length > 0 && Math.random() < 0.8) {
+                enemy.attack.push(
+                        enemy.attack[Math.floor(Math.random() * enemy.attack.length)]);
             } else {
                 enemy.attack.push(
-                        manaNames[Math.floor(Math.random() * manaNames.length)]);
+                        castableMana[Math.floor(Math.random() * castableMana.length)]);
             }
         }
     }
@@ -245,6 +281,7 @@ function applySpell(caster, target) {
     cast.polar = cartesian2Polar(cast.x, cast.y);
     let spellDamage = 0;
     let spellEffect = {};
+    let effectsList = [];
     manaNames.forEach(entry => {
         let mana = MANA[entry];
         if (Math.abs(cast.polar.angle - mana.hue) < 45) {
@@ -257,30 +294,48 @@ function applySpell(caster, target) {
             spellEffect[effect] = mana.effect[effect] * cast.polar.magnitude;
         }
     });
-    target.hp -= Math.floor(spellDamage);
+    reduceHP(target, spellDamage);
     Object.entries(spellEffect).forEach(element => {
         if (element[0] == 'burning') {
             target.burning = Math.floor(element[1]);
-            target.hp -= target.burning;
-            console.log('burned');
+            reduceHP(target, target.burning);
+            effectsList.push(element[0]);
         } else if (element[0] == 'critical') {
             target.hp -= (Math.random() <= element[1]) ? Math.floor(spellDamage) : 0;
         } else if (element[0] == 'slow' && Math.random() <= element[1]) {
             target.actions = 5;
+            target.slow = true;
+            effectsList.push(element[0]);
         } else if (element[0] == 'stable' && Math.random() <= element[1]) {
             caster.stable = true;
+        } else if (element[0] == 'dazed' && Math.random() <= element[1]) {
+            target[element[0]] = manaNames[Math.floor(Math.random() * manaNames.length)];
+            effectsList.push(element[0]);
         } else if (Math.random() <= element[1]) {
             target[element[0]] = true;
+            effectsList.push(element[0]);
         }
     });
     displayStatus(target);
+    if (target == enemy && spellDamage != 0 && effectsList.length != 0) {
+        combatLog(`You did ${Math.floor(spellDamage)} damage and inflicted ${effectsList.join(' and ')}`);
+    } else if (target == enemy && spellDamage != 0) {
+        combatLog(`You did ${Math.floor(spellDamage)} damage`);
+    } else if (target == player && spellDamage != 0 && effectsList.length != 0) {
+        combatLog(`The enemy did ${Math.floor(spellDamage)} damage and inflicted ${effectsList.join(' and ')}`);
+    } else if (target == player && spellDamage != 0) {
+        combatLog(`The enemy did ${Math.floor(spellDamage)} damage`);
+    }
 }
 
 function restoreStatus(target) {
     target.actions = 6;
+    target.slow = false;
     target.dazed = false;
     target.confused = false;
     target.petrified = false;
+    const castButton = document.getElementById('castButton');
+    castButton.innerText = "Cast!";
     target.stable = false;
     if (target.burning <= 2) {
         target.burning = false;
@@ -309,12 +364,12 @@ function displayStatus(target) {
 }
 
 function playerCastsSpell() {
+    combatLog('',true);
     restoreStatus(player);
     let spell = resolveSpell(player.attack);
     displaySpellEffect('player', spell);
     counterMana(player,enemy);
     applySpell(enemy, player);
-    playerHP.innerHTML = `${player.hp}`;
     pickEnemyAction();
     newRound();
 }

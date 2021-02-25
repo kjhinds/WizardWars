@@ -8,12 +8,12 @@
     <body>
         <div id='header'>
             <h1>Wizard Wars!</h1>
-            <p id='log'>A wizard approaches! Counter his spells!</p>
+            <p id='log'></p>
         </div>
         <div id='enemy'>
             <div>
-                <p>Effects</p>
-                <div id='enemyEffects'></div>
+                <p>HP</p><div id='enemyhp'></div>
+                <p>Effects</p><div id='enemyEffects'></div>
             </div>
             <div><img id='enemyImage' src='wizard.png'></div>
             <div>
@@ -41,11 +41,36 @@
                 <div id='playerSpell'></div>
             </div>
             <div id='castManaButton'>
-                <button type="button" onclick="playerCastsSpell()">Cast!</button>
+                <button type="button" id='castButton' onclick="playerCastsSpell()">Cast!</button>
             </div>
         </div>
         <div id='footer'>
-
+            <h2>How to Play:</h2>
+            <p>
+                Pick up to 6 mana types. Up to 2 can be counter mana to reduce the enemy
+                spell's effectiveness by "poisoning" their spell with opposite mana.  Be
+                careful, because you could strengthen their spell!
+            </p>
+            <p>
+                Mana colors are blended to determine the resulting spell.  The more of one
+                particular mana type you use, the more potent that mana effect will be.  The 
+                final color of the spell determines what effects it produces.
+            </p>
+            <p>
+                Opposite mana types will cancel each other out, so use mana that a similar in "color".
+            </p>
+            <h2>Mana effects</h2>
+            <ul>
+                <li>Fire: Moderate Fire Damage and burning over time (reduces by half each round)</li>
+                <li>Water: Weak Water Damage and Slow (one less mana picked next round)</li>
+                <li>Earth: Heavy Earth Damage</li>
+                <li>Air: Moderate Air Damage and Dazed (one random mana unusable next round)</li>
+                <li>Stability: Small unaspected damage and chance of ignoring enemy counter mana</li>
+                <li>Volatility: Small unaspected damage and chance of Critical attack (double damage)</li>
+                <li>Physical: Small unaspected damage and chance of Petrification (No action on next round)</li>
+                <li>Mental: Small unaspected damage and chance of Confusion (all mana types are shuffled)</li>
+            </ul>       
+            </p>
         </div>
         <script src="script.js" async defer></script>
     </body>

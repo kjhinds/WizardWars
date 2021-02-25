@@ -2,6 +2,10 @@ body {
     text-align: center;
 }
 
+#footer {
+    text-align: left;
+}
+
 #enemySpell {
     border-radius: 50%;
     margin: auto;
